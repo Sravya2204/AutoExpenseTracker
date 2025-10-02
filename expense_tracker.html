@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<style>
+  body { font-family: Arial; background: #f0f8ff; margin:0; padding:15px; color:black; }
+  h1 { text-align:center; color:#1e90ff; }
+  .container { max-width:650px; margin:auto; }
+  .card { background:#fff; border-radius:10px; padding:12px; margin:12px 0; box-shadow:0 2px 5px rgba(0,0,0,0.1);}
+  input, select, button { margin:5px 0; padding:8px; border-radius:5px; border:1px solid #ccc; width:100%; }
+  button { background:#1e90ff; color:white; cursor:pointer; font-weight:bold; }
+  button:hover { background:#0f62c1; }
+  .limit-exceeded { color:red; font-weight:bold; }
+  .saved { color:green; font-weight:bold; }
+  .history-card { background:#e6f2ff; border-radius:8px; padding:10px; margin:6px 0; }
+  .reset-btn { background:#ff4444; margin-top:15px; }
+  .reset-btn:hover { background:#cc0000; }
+</style>
+</head>
+<body>
+  <h1>Expense Tracker</h1>
+<div class="container">
+  <div class="card">
+    <input type="date" id="viewDate" value="">
+  </div>
+
+  <div class="card">
+    <input type="number" id="dailyLimit" placeholder="Set limit for selected date (₹)">
+    <button onclick="setLimit()">Set Limit</button>
+  </div>
+
+  <div class="card">
+    <input type="number" id="expenseAmount" placeholder="Enter amount">
+    <select id="expenseCategory">
+      <option value="Food">Food 🍔</option>
+      <option value="Shopping">Shopping 🛍️</option>
+      <option value="Travel">Travel 🚌</option>
+      <option value="Other">Other 📌</option>
+    </select>
+    <button onclick="addExpense()">Add Expense</button>
+  </div>
+
+  <div class="card">
+    <h3>Today’s Expenses</h3>
+    <div id="todayExpenses"></div>
+    <p id="limitStatus"></p>
+  </div>
+
+  <div class="card" id="summary"></div>
+
+  <div class="card" id="historyCard" style="display:none;">
+    <h3>Expense History</h3>
+    <div id="history"></div>
+  </div>
+
+  <button onclick="toggleHistory()">History</button>
+  <button class="reset-btn" onclick="resetAll()">Reset Tracker</button>
+</div>
+
+<script>
+let dailyLimits = {};
+let expenses = [];
+
+function getSelectedDate() {
+  let date = document.getElementById("viewDate").value;
+  if(!date) {
+    date = new Date().toISOString().split('T')[0];
+    document.getElementById("viewDate").value = date;
+  }
+  return date;
+}
+
+function setLimit() {
+  const limit = parseFloat(document.getElementById("dailyLimit").value);
+  const date = getSelectedDate();
+  if (limit && date) {
+    dailyLimits[date] = limit;
+    alert("Limit set for " + date + ": ₹" + limit);
+    updateTodayView();
+    updateSummary();
+  }
+}
+
+function addExpense() {
+  const amount = parseFloat(document.getElementById("expenseAmount").value);
+  const category = document.getElementById("expenseCategory").value;
+  const date = getSelectedDate();
+  const time = new Date().toLocaleTimeString();
+
+  if(amount && category) {
+    expenses.push({ amount, category, date, time });
+    updateTodayView();
+    updateHistory();
+    updateSummary();
+  }
+}
+
+function updateTodayView() {
+  const date = getSelectedDate();
+  const todayExpenses = expenses.filter(e => e.date === date);
+  const todayLimit = dailyLimits[date] || 0;
+  const total = todayExpenses.reduce((sum,e)=>sum+e.amount,0);
+
+  let html = todayExpenses.map(e => `${e.time} - ${e.category}: ₹${e.amount}`).join("<br>");
+  document.getElementById("todayExpenses").innerHTML = html || "No expenses for this date.";
+
+  if(todayLimit>0){
+    if(total>todayLimit){
+      document.getElementById("limitStatus").innerHTML = `🚨 Exceeded limit by ₹${total - todayLimit}`;
+      document.getElementById("limitStatus").className = "limit-exceeded";
+    } else {
+      document.getElementById("limitStatus").innerHTML = `🎉 Saved ₹${todayLimit - total} today`;
+      document.getElementById("limitStatus").className = "saved";
+    }
+  } else {
+    document.getElementById("limitStatus").innerHTML = "";
+  }
+}
+
+function updateHistory(){
+  const historyDiv = document.getElementById("history");
+  historyDiv.innerHTML="";
+  let grouped={};
+  expenses.forEach(e=>{
+    if(!grouped[e.date]) grouped[e.date]=[];
+    grouped[e.date].push(e);
+  });
+  for(let date in grouped){
+    const totalDay = grouped[date].reduce((s, x)=>s+x.amount,0);
+    const limit = dailyLimits[date] || 0;
+    const saved = limit>0 ? (limit-totalDay) : 0;
+    let summaryLine = limit>0 ? (saved>=0 ? `(Saved ₹${saved})` : `(Exceeded ₹${-saved})`) : "";
+    let html=`<div class="history-card"><b>${date}</b> ${summaryLine}<br>`;
+    grouped[date].forEach(e=> html+=`${e.time} - ${e.category}: ₹${e.amount}<br>`);
+    html+="</div>";
+    historyDiv.innerHTML+=html;
+  }
+}
+
+function updateSummary() {
+  let weekSpending = 0, monthSpending = 0, yearSpending = 0;
+  let weekSaved = 0, monthSaved = 0, yearSaved = 0;
+
+  const grouped = {};
+  expenses.forEach(e => {
+    if (!grouped[e.date]) grouped[e.date] = [];
+    grouped[e.date].push(e);
+  });
+
+  Object.keys(grouped).forEach(date => {
+    const dayExpenses = grouped[date];
+    const totalDay = dayExpenses.reduce((s, x) => s + x.amount, 0);
+
+    const limit = dailyLimits[date] || 0;
+    const saved = limit > 0 ? (limit - totalDay) : 0;
+
+    const d = new Date(date);
+    const now = new Date();
+
+    if ((now - d) / (1000 * 60 * 60 * 24) < 7) {
+      weekSpending += totalDay;
+      weekSaved += saved;
+    }
+    if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+      monthSpending += totalDay;
+      monthSaved += saved;
+    }
+    if (d.getFullYear() === now.getFullYear()) {
+      yearSpending += totalDay;
+      yearSaved += saved;
+    }
+  });
+
+  document.getElementById("summary").innerHTML = `
+    <h3>Summary</h3>
+    <p><b>Weekly Spending:</b> ₹${weekSpending}, <b>Saved:</b> ₹${weekSaved}</p>
+    <p><b>Monthly Spending:</b> ₹${monthSpending}, <b>Saved:</b> ₹${monthSaved}</p>
+    <p><b>Yearly Spending:</b> ₹${yearSpending}, <b>Saved:</b> ₹${yearSaved}</p>
+  `;
+}
+
+function toggleHistory(){
+  const card = document.getElementById("historyCard");
+  card.style.display = card.style.display==="none" ? "block" : "none";
+}
+
+function resetAll(){
+  if(confirm("Reset all data?")){
+    dailyLimits={};
+    expenses=[];
+    document.getElementById("todayExpenses").innerHTML="";
+    document.getElementById("limitStatus").innerHTML="";
+    document.getElementById("history").innerHTML="";
+    document.getElementById("summary").innerHTML="";
+    alert("Tracker reset!");
+  }
+}
+
+document.getElementById("viewDate").addEventListener("change", updateTodayView);
+
+// initialize today
+updateTodayView();
+updateSummary();
+</script>
+</body>
+</html>
