@@ -1,17 +1,27 @@
-# AutoExpenseTracker
-Java project to track daily expenses with CSV logging and daily limit tracking
 Project Overview
 
-It is an Auto Expense Tracker application to log daily expenses, calculate totals, and monitor spending against a daily limit. The app supports multiple categories (Shopping, Bills, Travel, Food) and stores all data in expenses.csv with timestamps.
+A comprehensive Expense Tracker developed in Java and as a Web Application using HTML, CSS, and JavaScript.
 
-Key Features:
+Helps users track daily expenses, monitor budgets, and analyze spending patterns.
 
-Log expenses with category, amount, and date-time.
+Designed to be interactive, user-friendly, and visually clear.
 
-Daily total calculation and category-wise summary.
+Supports multiple categories, daily limits, and historical tracking.
 
-Alerts when spending exceeds the daily limit.
+✅ Key Features
 
-Data stored in CSV for future tracking.
+Set Daily Limit – Set a budget for each day; defaults to today if no date is selected.
 
-Simulated 3-day expense scenarios to demonstrate saving, exact limit, and exceeding limit.
+Add Expenses – Record spending with categories: Food, Shopping, Travel, Other.
+
+Automatic Timestamp – Every expense logs the exact date and time.
+
+Daily Summary – See total spent and know if you saved 🎉 or exceeded 🚨 the limit.
+
+Weekly, Monthly, Yearly Summary – Track spending and savings over time.
+
+Expense History – View past expenses with category-wise breakdown.
+
+Reset Option – Clear all data and start fresh anytime.
+
+Interactive Web UI – Clean, simple, white and blue theme; easy to read and navigate.
